@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
 <title>Planet Purrbit — Cat Food Collector</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -44,7 +44,8 @@
     position: absolute;
     inset: 0;
     pointer-events: none;
-    padding: clamp(14px, 2vw, 28px);
+    padding: max(clamp(14px, 2vw, 28px), env(safe-area-inset-top)) max(clamp(14px, 2vw, 28px), env(safe-area-inset-right))
+      max(clamp(14px, 2vw, 28px), env(safe-area-inset-bottom)) max(clamp(14px, 2vw, 28px), env(safe-area-inset-left));
     display: flex;
     flex-direction: column;
   }
@@ -236,10 +237,52 @@
 
   #loading.hidden { opacity: 0; pointer-events: none; }
 
+  /* Touch joystick — shown only on touch-primary devices (phones/tablets) */
+  .joystick-zone {
+    display: none;
+    position: absolute;
+    left: max(24px, env(safe-area-inset-left));
+    bottom: max(24px, env(safe-area-inset-bottom));
+    width: 128px;
+    height: 128px;
+    border-radius: 50%;
+    background: var(--color-panel);
+    border: 1px solid var(--color-panel-border);
+    box-shadow: var(--shadow-panel);
+    backdrop-filter: blur(14px) saturate(140%);
+    -webkit-backdrop-filter: blur(14px) saturate(140%);
+    touch-action: none;
+    pointer-events: auto;
+  }
+
+  .joystick-knob {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 56px;
+    height: 56px;
+    margin: -28px 0 0 -28px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #ffe28a, #ff9ecb 55%, #8ab4ff);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+    transition: transform 60ms linear;
+  }
+
+  @media (hover: none) and (pointer: coarse) {
+    .joystick-zone { display: block; }
+    .controls-hint { display: none; }
+  }
+
   @media (max-width: 640px) {
     .legend { min-width: 132px; padding: 10px 12px; }
     .scoreboard { padding: 10px 14px; }
     .controls-hint { display: none; }
+  }
+
+  /* Phone portrait widths: the legend + scoreboard panels alone fill the
+     available width, so the centered title would overlap them. */
+  @media (max-width: 460px) {
+    .title-badge { display: none; }
   }
 </style>
 </head>
@@ -282,6 +325,10 @@
     <div class="keys">
       <kbd>↑</kbd><kbd>←</kbd><kbd>↓</kbd><kbd>→</kbd>
     </div>
+  </div>
+
+  <div class="joystick-zone" id="joystickZone" aria-label="Move" role="presentation">
+    <div class="joystick-knob" id="joystickKnob"></div>
   </div>
 </div>
 
@@ -680,14 +727,72 @@ const keys = new Set();
 window.addEventListener('keydown', (e) => keys.add(e.code));
 window.addEventListener('keyup', (e) => keys.delete(e.code));
 
+// Touch joystick — bottom-left drag pad, shown only on touch-primary devices via CSS.
+const touchInput = { forward: 0, turn: 0 };
+
+function setupJoystick() {
+  const zone = document.getElementById('joystickZone');
+  const knob = document.getElementById('joystickKnob');
+  const maxRadius = 40;
+  let activePointerId = null;
+  let originX = 0;
+  let originY = 0;
+
+  function updateFromPointer(clientX, clientY) {
+    const dx = clientX - originX;
+    const dy = clientY - originY;
+    const dist = Math.min(Math.hypot(dx, dy), maxRadius);
+    const angle = Math.atan2(dy, dx);
+    const knobX = Math.cos(angle) * dist;
+    const knobY = Math.sin(angle) * dist;
+    knob.style.transform = `translate(${knobX}px, ${knobY}px)`;
+    touchInput.forward = -knobY / maxRadius;
+    touchInput.turn = -knobX / maxRadius;
+  }
+
+  function reset() {
+    knob.style.transform = 'translate(0, 0)';
+    touchInput.forward = 0;
+    touchInput.turn = 0;
+  }
+
+  zone.addEventListener('pointerdown', (e) => {
+    if (activePointerId !== null) return;
+    activePointerId = e.pointerId;
+    const rect = zone.getBoundingClientRect();
+    originX = rect.left + rect.width / 2;
+    originY = rect.top + rect.height / 2;
+    zone.setPointerCapture(activePointerId);
+    updateFromPointer(e.clientX, e.clientY);
+  });
+
+  zone.addEventListener('pointermove', (e) => {
+    if (e.pointerId !== activePointerId) return;
+    updateFromPointer(e.clientX, e.clientY);
+  });
+
+  function endTouch(e) {
+    if (e.pointerId !== activePointerId) return;
+    activePointerId = null;
+    reset();
+  }
+
+  zone.addEventListener('pointerup', endTouch);
+  zone.addEventListener('pointercancel', endTouch);
+}
+setupJoystick();
+
 function readInput() {
-  let forward = 0;
-  let turn = 0;
+  let forward = touchInput.forward;
+  let turn = touchInput.turn;
   if (keys.has('KeyW') || keys.has('ArrowUp')) forward += 1;
   if (keys.has('KeyS') || keys.has('ArrowDown')) forward -= 1;
   if (keys.has('KeyA') || keys.has('ArrowLeft')) turn += 1;
   if (keys.has('KeyD') || keys.has('ArrowRight')) turn -= 1;
-  return { forward, turn };
+  return {
+    forward: Math.max(-1, Math.min(1, forward)),
+    turn: Math.max(-1, Math.min(1, turn)),
+  };
 }
 
 /* ---------------------------------------------------------------------- */
@@ -871,6 +976,7 @@ function resize() {
   renderer.setSize(window.innerWidth, window.innerHeight);
 }
 window.addEventListener('resize', resize);
+window.addEventListener('orientationchange', resize);
 
 function tick() {
   const dt = Math.min(clock.getDelta(), 0.05);
