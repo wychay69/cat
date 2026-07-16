@@ -207,7 +207,9 @@
     top: clamp(14px, 2vw, 28px);
     left: 50%;
     transform: translateX(-50%);
-    text-align: center;
+    display: flex;
+    align-items: center;
+    gap: 10px;
     pointer-events: none;
   }
 
@@ -219,7 +221,26 @@
     letter-spacing: 0.02em;
     color: var(--color-text);
     text-shadow: 0 2px 14px rgba(90, 110, 255, 0.5);
+    white-space: nowrap;
   }
+
+  .title-timer {
+    font-family: 'Baloo 2', sans-serif;
+    font-weight: 700;
+    font-size: clamp(13px, 1.8vw, 16px);
+    color: var(--color-text);
+    background: var(--color-panel);
+    border: 1px solid var(--color-panel-border);
+    border-radius: 999px;
+    padding: 4px 12px;
+    box-shadow: var(--shadow-panel);
+    backdrop-filter: blur(14px) saturate(140%);
+    -webkit-backdrop-filter: blur(14px) saturate(140%);
+    white-space: nowrap;
+    transition: opacity var(--duration-normal) var(--ease-out-expo);
+  }
+
+  .title-timer.hidden { display: none; }
 
   #loading {
     position: absolute;
@@ -282,7 +303,133 @@
   /* Phone portrait widths: the legend + scoreboard panels alone fill the
      available width, so the centered title would overlap them. */
   @media (max-width: 460px) {
-    .title-badge { display: none; }
+    .title-badge h1 { display: none; }
+  }
+
+  /* Win celebration */
+  .win-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    overflow: hidden;
+    z-index: 20;
+  }
+
+  .win-ring {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 60px;
+    height: 60px;
+    margin: -30px 0 0 -30px;
+    border-radius: 50%;
+    border: 3px solid rgba(255, 226, 138, 0.85);
+    box-shadow: 0 0 30px rgba(255, 205, 74, 0.5);
+    animation: winRing 1.4s var(--ease-out-expo) forwards;
+  }
+
+  @keyframes winRing {
+    0% { transform: scale(0.2); opacity: 1; }
+    100% { transform: scale(9); opacity: 0; }
+  }
+
+  .win-content {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    text-align: center;
+    animation: winPop 700ms var(--ease-out-expo) forwards;
+  }
+
+  @keyframes winPop {
+    0% { transform: scale(0.3) translateY(20px); opacity: 0; }
+    60% { transform: scale(1.15) translateY(0); opacity: 1; }
+    100% { transform: scale(1) translateY(0); opacity: 1; }
+  }
+
+  .win-title {
+    margin: 0;
+    font-family: 'Baloo 2', sans-serif;
+    font-weight: 800;
+    font-size: clamp(48px, 9vw, 96px);
+    letter-spacing: 0.02em;
+    background: linear-gradient(135deg, #ffe28a, #ff9ecb 55%, #8ab4ff);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    text-shadow: 0 6px 30px rgba(255, 180, 120, 0.55);
+    animation: winTitlePulse 1.8s ease-in-out infinite;
+  }
+
+  @keyframes winTitlePulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+  }
+
+  .win-time {
+    margin: 0;
+    font-family: 'Nunito', sans-serif;
+    font-weight: 800;
+    font-size: clamp(16px, 2.4vw, 22px);
+    color: var(--color-text);
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+  }
+
+  .reset-button {
+    pointer-events: auto;
+    margin-top: 4px;
+    padding: 12px 32px;
+    border: none;
+    border-radius: 999px;
+    font-family: 'Baloo 2', sans-serif;
+    font-weight: 800;
+    font-size: clamp(16px, 2vw, 19px);
+    letter-spacing: 0.03em;
+    color: #23142b;
+    background: linear-gradient(135deg, #ffe28a, #ff9ecb 55%, #8ab4ff);
+    box-shadow: 0 8px 22px rgba(255, 158, 203, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+    cursor: pointer;
+    transition: transform 150ms var(--ease-out-expo), box-shadow 150ms var(--ease-out-expo);
+  }
+
+  .reset-button:hover {
+    transform: translateY(-2px) scale(1.04);
+    box-shadow: 0 12px 28px rgba(255, 158, 203, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  }
+
+  .reset-button:active {
+    transform: translateY(0) scale(0.98);
+  }
+
+  .reset-button:focus-visible {
+    outline: 3px solid #ffffff;
+    outline-offset: 3px;
+  }
+
+  .win-particle {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    font-size: var(--particle-size, 28px);
+    transform: translate(-50%, -50%);
+    animation: winBurst var(--particle-duration, 1.6s) var(--ease-out-expo) forwards;
+    animation-delay: var(--particle-delay, 0s);
+    opacity: 0;
+    will-change: transform, opacity;
+  }
+
+  @keyframes winBurst {
+    0% { transform: translate(-50%, -50%) translate(0, 0) scale(0.3) rotate(0deg); opacity: 1; }
+    75% { opacity: 1; }
+    100% {
+      transform: translate(-50%, -50%) translate(var(--particle-tx), var(--particle-ty)) scale(1) rotate(var(--particle-rot));
+      opacity: 0;
+    }
   }
 </style>
 </head>
@@ -295,6 +442,7 @@
   <div class="hud">
     <div class="title-badge">
       <h1>🪐 Planet Purrbit</h1>
+      <span class="title-timer" id="titleTimer">0:00</span>
     </div>
 
     <div class="hud-row">
@@ -315,6 +463,8 @@
       </section>
     </div>
   </div>
+
+  <div class="win-overlay" id="winOverlay" aria-live="polite"></div>
 
   <div class="panel controls-hint">
     <span>Move</span>
@@ -540,10 +690,10 @@ function buildCat() {
   bodyPivot.name = 'bodyPivot';
   cat.add(bodyPivot);
 
-  // Slim, lean torso — noticeably narrower radius than a typical stocky build.
-  const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.22, 0.66, 4, 10), furMat);
+  // Torso radius matches the legs' radius exactly, for a uniformly slim silhouette.
+  const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.06, 0.66, 4, 10), furMat);
   body.rotation.z = Math.PI / 2;
-  body.position.set(0, 0.24, 0);
+  body.position.set(0, 0.42, 0);
   body.castShadow = true;
   body.receiveShadow = true;
   bodyPivot.add(body);
@@ -552,7 +702,7 @@ function buildCat() {
   // uniformly scaled down + repositioned to match the slimmer torso — this
   // keeps every facial feature's relative proportions intact.
   const headGroup = new THREE.Group();
-  headGroup.position.set(0.02, -0.04, 0);
+  headGroup.position.set(-0.14, -0.02, 0);
   headGroup.scale.setScalar(0.78);
   bodyPivot.add(headGroup);
 
@@ -615,11 +765,12 @@ function buildCat() {
     }
   }
 
-  // Slender legs, drawn in a touch from the wider original stance.
+  // Slender legs — the torso now matches their radius, so the stance is drawn
+  // in a little tighter to keep the whole build reading as uniformly slim.
   const legGeo = new THREE.CylinderGeometry(0.06, 0.06, 0.4, 8);
   const legPositions = [
-    [0.3, 0.2, 0.12], [0.3, 0.2, -0.12],
-    [-0.3, 0.2, 0.12], [-0.3, 0.2, -0.12],
+    [0.3, 0.2, 0.08], [0.3, 0.2, -0.08],
+    [-0.3, 0.2, 0.08], [-0.3, 0.2, -0.08],
   ];
   const legs = legPositions.map((p) => {
     const leg = new THREE.Mesh(legGeo, furDarkMat);
@@ -632,7 +783,7 @@ function buildCat() {
   // Crooked, kinked tail — a chain of tapering segments, each bent at a fixed
   // joint angle in three axes, rather than one straight cylinder.
   const tailPivot = new THREE.Group();
-  tailPivot.position.set(-0.34, 0.34, 0);
+  tailPivot.position.set(-0.24, 0.44, 0);
   tailPivot.rotation.z = 0.6;
   bodyPivot.add(tailPivot);
 
@@ -905,6 +1056,120 @@ function addScore(points, canType) {
   el.style.left = `${4 + Math.random() * 40}px`;
   floatLayer.appendChild(el);
   window.setTimeout(() => el.remove(), 1150);
+
+  if (!hasWon && score > WIN_SCORE_THRESHOLD) {
+    hasWon = true;
+    triggerWinCelebration(clock.elapsedTime - sessionStartTime);
+  }
+}
+
+/* ---------------------------------------------------------------------- */
+/* Win celebration                                                        */
+/* ---------------------------------------------------------------------- */
+
+const WIN_SCORE_THRESHOLD = 100;
+const CELEBRATION_BURST_INTERVAL_MS = 900;
+const WIN_FLOWER_EMOJI = ['🌸', '🌼', '🌷', '🌻', '💮'];
+const WIN_FIREWORK_EMOJI = ['🎆', '🎇', '✨', '🎉'];
+let hasWon = false;
+let sessionStartTime = 0;
+let celebrationIntervalId = null;
+const winOverlayEl = document.getElementById('winOverlay');
+const titleTimerEl = document.getElementById('titleTimer');
+
+function formatElapsedTime(seconds) {
+  const totalSeconds = Math.max(0, Math.floor(seconds));
+  const minutes = Math.floor(totalSeconds / 60);
+  const secs = totalSeconds % 60;
+  return `${minutes}:${String(secs).padStart(2, '0')}`;
+}
+
+function spawnWinParticle(emoji) {
+  const particle = document.createElement('span');
+  particle.className = 'win-particle';
+  particle.textContent = emoji;
+
+  const angle = Math.random() * Math.PI * 2;
+  const distance = 140 + Math.random() * 260;
+  particle.style.setProperty('--particle-tx', `${Math.cos(angle) * distance}px`);
+  particle.style.setProperty('--particle-ty', `${Math.sin(angle) * distance}px`);
+  particle.style.setProperty('--particle-rot', `${(Math.random() - 0.5) * 720}deg`);
+  particle.style.setProperty('--particle-size', `${20 + Math.random() * 22}px`);
+  particle.style.setProperty('--particle-duration', `${1.2 + Math.random() * 0.9}s`);
+  particle.style.setProperty('--particle-delay', `${Math.random() * 0.35}s`);
+  particle.addEventListener('animationend', () => particle.remove());
+
+  winOverlayEl.appendChild(particle);
+}
+
+function spawnCelebrationBurst() {
+  const ring = document.createElement('div');
+  ring.className = 'win-ring';
+  ring.addEventListener('animationend', () => ring.remove());
+  winOverlayEl.appendChild(ring);
+
+  for (let i = 0; i < 6; i++) {
+    spawnWinParticle(WIN_FLOWER_EMOJI[Math.floor(Math.random() * WIN_FLOWER_EMOJI.length)]);
+  }
+  for (let i = 0; i < 6; i++) {
+    spawnWinParticle(WIN_FIREWORK_EMOJI[Math.floor(Math.random() * WIN_FIREWORK_EMOJI.length)]);
+  }
+}
+
+function triggerWinCelebration(elapsedSeconds) {
+  winOverlayEl.innerHTML = '';
+  titleTimerEl.classList.add('hidden');
+
+  const content = document.createElement('div');
+  content.className = 'win-content';
+
+  const title = document.createElement('p');
+  title.className = 'win-title';
+  title.textContent = 'You Win!';
+
+  const time = document.createElement('p');
+  time.className = 'win-time';
+  time.textContent = `Time taken: ${formatElapsedTime(elapsedSeconds)}`;
+
+  const resetButton = document.createElement('button');
+  resetButton.type = 'button';
+  resetButton.className = 'reset-button';
+  resetButton.textContent = 'Reset';
+  resetButton.addEventListener('click', resetGame);
+
+  content.appendChild(title);
+  content.appendChild(time);
+  content.appendChild(resetButton);
+  winOverlayEl.appendChild(content);
+
+  spawnCelebrationBurst();
+  celebrationIntervalId = window.setInterval(spawnCelebrationBurst, CELEBRATION_BURST_INTERVAL_MS);
+}
+
+function resetGame() {
+  if (celebrationIntervalId !== null) {
+    window.clearInterval(celebrationIntervalId);
+    celebrationIntervalId = null;
+  }
+  winOverlayEl.innerHTML = '';
+  titleTimerEl.classList.remove('hidden');
+  hasWon = false;
+
+  score = 0;
+  collectedCount = 0;
+  scoreValueEl.textContent = '0';
+  cansCollectedEl.textContent = '0 cans collected';
+  floatLayer.innerHTML = '';
+
+  player.position.set(0, PLANET_RADIUS, 0);
+  player.forward.set(1, 0, 0);
+  player.up.set(0, 1, 0);
+
+  for (const can of [...cans]) removeCan(can);
+  for (let i = 0; i < CAN_COUNT; i++) spawnCan();
+
+  sessionStartTime = clock.elapsedTime;
+  titleTimerEl.textContent = '0:00';
 }
 
 /* ---------------------------------------------------------------------- */
@@ -988,6 +1253,10 @@ function tick() {
   updateCamera(dt);
   checkCollisions();
   animateCans(elapsed);
+
+  if (!hasWon) {
+    titleTimerEl.textContent = formatElapsedTime(elapsed - sessionStartTime);
+  }
 
   renderer.render(scene, camera);
   requestAnimationFrame(tick);
